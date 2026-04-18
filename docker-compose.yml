@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  teca-send:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: teca-send
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - KINDLE_MOUNT_POINT=${KINDLE_MOUNT_POINT:-/mnt/kindle}
+      - KINDLE_DOCUMENTS_FOLDER=${KINDLE_DOCUMENTS_FOLDER:-documents}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      # Mount Kindle device if available
+      - /mnt/kindle:/mnt/kindle:rw
+      # Store converted files
+      - teca-converted:/tmp/converted
+    restart: unless-stopped
+    networks:
+      - teca-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  teca-converted:
+    driver: local
+
+networks:
+  teca-network:
+    driver: bridge
