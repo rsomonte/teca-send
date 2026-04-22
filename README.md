@@ -1,4 +1,5 @@
 # TECA-Send
+> Pronounced as "teck-uh" send. Teca comes from the Spanish word "Azteca"(Aztec), and since reading was so valuable and holy for the Aztecs, I thought it would be appropriate for a project that democratises the process of sending ebooks to Kindle devices. 
 
 A Telegram bot service that converts ebook files (EPUB, MOBI, AZW3) to Kindle-compatible formats and automatically transfers them to connected Kindle devices.
 
@@ -172,10 +173,10 @@ docker build -t teca-send:latest .
 docker-compose logs -f teca-send
 ```
 
-## License
-
-MIT
-
 ## Support
 
 For issues, questions, or suggestions, please open an issue on GitHub.
+
+## Language Support
+
+If you want to serve the bot in Spanish, change the branch to `spanish` and redeploy. The bot will respond in Spanish, but the configuration and logs will still be in English. (Planning on changing this via env vars in the future)
