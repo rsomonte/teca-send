@@ -11,7 +11,11 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     volumes:
       # Bind host Kindle mount path into the container mount path.
-      - ${KINDLE_MOUNT_POINT:-/mnt/kindle}:${CONTAINER_KINDLE_MOUNT_POINT:-/kindle}:${KINDLE_MOUNT_OPTIONS:-rw,z}
+      - type: bind
+        source: ${KINDLE_MOUNT_POINT:-/mnt/kindle}
+        target: ${CONTAINER_KINDLE_MOUNT_POINT:-/kindle}
+        bind:
+          propagation: ${KINDLE_BIND_PROPAGATION:-rshared}
       # Store converted files
       - teca-converted:/tmp/converted
     restart: unless-stopped
