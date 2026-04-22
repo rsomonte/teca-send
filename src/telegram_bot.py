@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import sys
@@ -39,9 +40,14 @@ class TelegramBotHandler:
     
     async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Check Kindle connection status"""
-        if KindleTransfer.is_kindle_connected():
+        if KindleTransfer.is_kindle_connected() and KindleTransfer.is_kindle_writable():
             await update.message.reply_text(
                 "✅ Kindle device is connected and ready!"
+            )
+        elif KindleTransfer.is_kindle_connected():
+            await update.message.reply_text(
+                "⚠️ Kindle device is connected, but the documents folder is read-only.\n"
+                "Conversion will work, but automatic transfer is unavailable until write access is enabled."
             )
         else:
             await update.message.reply_text(
@@ -73,6 +79,14 @@ class TelegramBotHandler:
             file = await context.bot.get_file(document.file_id)
             input_path = os.path.join(config.UPLOAD_DIR, file_name)
             await file.download_to_drive(input_path)
+
+            if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
+                logger.error(f"Downloaded file is missing or empty: {input_path}")
+                await update.message.reply_text(
+                    "❌ The uploaded file appears to be empty after download. "
+                    "Please resend the file and try again."
+                )
+                return
             
             # Convert file
             output_filename = FileConverter.get_output_filename(file_name)
@@ -83,6 +97,14 @@ class TelegramBotHandler:
             if not conversion_success:
                 await update.message.reply_text(
                     "❌ File conversion failed. Please try again or contact support."
+                )
+                return
+
+            if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+                logger.error(f"Converted output is missing or empty: {output_path}")
+                await update.message.reply_text(
+                    "❌ Conversion produced an empty file. "
+                    "Please try another source file."
                 )
                 return
             
@@ -107,7 +129,7 @@ class TelegramBotHandler:
                     )
                 else:
                     await update.message.reply_text(
-                        f"⚠️ Conversion completed, but transfer to Kindle failed.\n"
+                        f"⚠️ Conversion completed, but transfer to Kindle failed (device may be read-only).\n"
                         f"File is ready at: {output_path}"
                     )
             else:
@@ -146,8 +168,18 @@ class TelegramBotHandler:
         await self.application.initialize()
         await self.application.start()
         await self.application.updater.start_polling()
-        
+
         logger.info("Bot is running. Press Ctrl+C to stop.")
+
+        try:
+            # Keep the event loop alive so the updater can continuously process updates.
+            await asyncio.Event().wait()
+        finally:
+            logger.info("Stopping Telegram bot...")
+            if self.application.updater:
+                await self.application.updater.stop()
+            await self.application.stop()
+            await self.application.shutdown()
 
 def get_bot_instance():
     """Get singleton bot instance"""

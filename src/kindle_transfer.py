@@ -16,22 +16,39 @@ class KindleTransfer:
     
     @staticmethod
     def is_kindle_connected() -> bool:
-        """Check if Kindle device is connected and mounted"""
+        """Check if Kindle device is connected and mounted."""
         try:
             mount_point = Path(KindleTransfer.MOUNT_POINT)
             if not mount_point.exists():
                 logger.info(f"Kindle mount point does not exist: {KindleTransfer.MOUNT_POINT}")
                 return False
-            
-            # Check if it's a mounted filesystem
-            if not os.path.ismount(KindleTransfer.MOUNT_POINT):
-                logger.info(f"Kindle mount point is not mounted: {KindleTransfer.MOUNT_POINT}")
+
+            documents_path = mount_point / KindleTransfer.DOCUMENTS_FOLDER
+            if not documents_path.exists():
+                logger.info(
+                    f"Kindle documents folder not found at: {documents_path}"
+                )
                 return False
             
             logger.info("Kindle device is connected")
             return True
         except Exception as e:
             logger.error(f"Error checking Kindle connection: {str(e)}")
+            return False
+
+    @staticmethod
+    def is_kindle_writable() -> bool:
+        """Check whether the Kindle documents folder is writable."""
+        try:
+            documents_path = Path(KindleTransfer.get_kindle_documents_path())
+            writable = os.access(documents_path, os.W_OK)
+
+            if not writable:
+                logger.info(f"Kindle documents folder is not writable: {documents_path}")
+
+            return writable
+        except Exception as e:
+            logger.error(f"Error checking Kindle write access: {str(e)}")
             return False
     
     @staticmethod
@@ -58,9 +75,17 @@ class KindleTransfer:
             if not KindleTransfer.is_kindle_connected():
                 logger.warning("Kindle device is not connected")
                 return False
+
+            if not KindleTransfer.is_kindle_writable():
+                logger.warning("Kindle device is connected but documents folder is not writable")
+                return False
             
             if not os.path.exists(file_path):
                 logger.error(f"File not found: {file_path}")
+                return False
+
+            if os.path.getsize(file_path) == 0:
+                logger.error(f"Refusing to transfer empty file: {file_path}")
                 return False
             
             kindle_docs = KindleTransfer.get_kindle_documents_path()

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   teca-send:
     build:
@@ -8,15 +6,17 @@ services:
     container_name: teca-send
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - KINDLE_MOUNT_POINT=${KINDLE_MOUNT_POINT:-/mnt/kindle}
+      - KINDLE_MOUNT_POINT=${CONTAINER_KINDLE_MOUNT_POINT:-/kindle}
       - KINDLE_DOCUMENTS_FOLDER=${KINDLE_DOCUMENTS_FOLDER:-documents}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     volumes:
-      # Mount Kindle device if available
-      - /mnt/kindle:/mnt/kindle:rw
+      # Bind host Kindle mount path into the container mount path.
+      - ${KINDLE_MOUNT_POINT:-/mnt/kindle}:${CONTAINER_KINDLE_MOUNT_POINT:-/kindle}:${KINDLE_MOUNT_OPTIONS:-rw,z}
       # Store converted files
       - teca-converted:/tmp/converted
     restart: unless-stopped
+    security_opt:
+      - ${CONTAINER_SECURITY_OPT:-label=disable}
     networks:
       - teca-network
     logging:

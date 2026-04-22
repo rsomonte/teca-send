@@ -97,7 +97,9 @@ Edit `.env` file to customize:
 
 ```env
 TELEGRAM_BOT_TOKEN=your_token        # Required: Your Telegram bot token
-KINDLE_MOUNT_POINT=/mnt/kindle       # Path where Kindle is mounted
+KINDLE_MOUNT_POINT=/mnt/kindle       # Host path where Kindle is mounted
+CONTAINER_KINDLE_MOUNT_POINT=/kindle # Container path mapped to host Kindle mount
+KINDLE_MOUNT_OPTIONS=rw,z            # Bind options; use rw,z on SELinux hosts (Fedora/RHEL)
 KINDLE_DOCUMENTS_FOLDER=documents    # Target folder on Kindle
 OUTPUT_FORMAT=mobi                   # Output format (mobi, pdf, etc.)
 LOG_LEVEL=INFO                       # Logging level (DEBUG, INFO, WARNING, ERROR)
@@ -134,8 +136,14 @@ teca-send/
 
 ### Kindle not detected
 - Ensure device is connected and mounted
-- Check mount point in `.env` (default: `/mnt/kindle`)
-- Verify permissions: `ls -la /mnt/kindle`
+- Check `KINDLE_MOUNT_POINT` in `.env` points to the host mount path (example: `/run/media/<user>/Kindle`)
+- Verify permissions on the host mount path
+
+### Kindle connected but read-only in container
+- On Fedora/RHEL with SELinux, set `KINDLE_MOUNT_OPTIONS=rw,z` in `.env`
+- If the Kindle is mounted as VFAT/exFAT and still read-only, set `CONTAINER_SECURITY_OPT=label=disable` in `.env`
+- Recreate the service after changing mount options: `docker compose up -d --build`
+- Validate from container: `docker compose exec teca-send sh -lc 'touch /kindle/documents/.teca_write_test && rm /kindle/documents/.teca_write_test'`
 
 ### Conversion fails
 - Ensure Calibre is installed

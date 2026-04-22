@@ -1,5 +1,4 @@
 python-telegram-bot==20.7
-ebook-convert>=0.0.1
 python-dotenv==1.0.0
-asyncio-contextmanager==1.0.0
-Pillow==10.1.0
+
+# Calibre provides the ebook-convert CLI; install it via the OS package manager or Docker image.
