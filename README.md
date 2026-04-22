@@ -100,7 +100,7 @@ Edit `.env` file to customize:
 TELEGRAM_BOT_TOKEN=your_token        # Required: Your Telegram bot token
 KINDLE_MOUNT_POINT=/mnt/kindle       # Host path where Kindle is mounted
 CONTAINER_KINDLE_MOUNT_POINT=/kindle # Container path mapped to host Kindle mount
-KINDLE_MOUNT_OPTIONS=rw,z            # Bind options; use rw,z on SELinux hosts (Fedora/RHEL)
+KINDLE_BIND_PROPAGATION=rshared      # Keep rshared so host remounts are visible in container
 KINDLE_DOCUMENTS_FOLDER=documents    # Target folder on Kindle
 OUTPUT_FORMAT=mobi                   # Output format (mobi, pdf, etc.)
 LOG_LEVEL=INFO                       # Logging level (DEBUG, INFO, WARNING, ERROR)
@@ -138,12 +138,13 @@ teca-send/
 ### Kindle not detected
 - Ensure device is connected and mounted
 - Check `KINDLE_MOUNT_POINT` in `.env` points to the host mount path (example: `/run/media/<user>/Kindle`)
+- Confirm it is an actual mount and not just a directory: `findmnt /mnt/kindle`
 - Verify permissions on the host mount path
 
 ### Kindle connected but read-only in container
-- On Fedora/RHEL with SELinux, set `KINDLE_MOUNT_OPTIONS=rw,z` in `.env`
+- Keep `KINDLE_BIND_PROPAGATION=rshared` in `.env` so host remount events propagate into the container
 - If the Kindle is mounted as VFAT/exFAT and still read-only, set `CONTAINER_SECURITY_OPT=label=disable` in `.env`
-- Recreate the service after changing mount options: `docker compose up -d --build`
+- Recreate the service after host mount or env changes: `docker compose up -d --force-recreate`
 - Validate from container: `docker compose exec teca-send sh -lc 'touch /kindle/documents/.teca_write_test && rm /kindle/documents/.teca_write_test'`
 
 ### Conversion fails
