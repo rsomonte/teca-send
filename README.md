@@ -115,7 +115,7 @@ teca-send/
 │   ├── telegram_bot.py         # Telegram bot handler
 │   ├── file_converter.py       # Ebook conversion logic
 │   ├── kindle_transfer.py      # Kindle device operations
-│   └── config.py               # Configuration management
+│   └── messages/               # Language-specific bot messages
 ├── config/
 ├── tests/                      # Unit tests (to be added)
 ├── Dockerfile
@@ -180,4 +180,4 @@ For issues, questions, or suggestions, please open an issue on GitHub.
 
 ## Language Support
 
-If you want to serve the bot in Spanish, change the branch to `spanish` and redeploy. The bot will respond in Spanish, but the configuration and logs will still be in English. (Planning on changing this via env vars in the future)
+Set `BOT_LANGUAGE=es` to serve the bot in Spanish or `BOT_LANGUAGE=en` to use English. The message catalog is selected from separate language files at startup, so changing the language no longer requires a branch switch.

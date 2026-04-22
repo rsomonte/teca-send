@@ -3,16 +3,18 @@ import shutil
 import logging
 from pathlib import Path
 import sys
+from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import config
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 class KindleTransfer:
     """Handle file transfer to connected Kindle device"""
     
-    MOUNT_POINT = config.KINDLE_MOUNT_POINT
-    DOCUMENTS_FOLDER = config.KINDLE_DOCUMENTS_FOLDER
+    MOUNT_POINT = os.getenv('KINDLE_MOUNT_POINT', '/mnt/kindle')
+    DOCUMENTS_FOLDER = os.getenv('KINDLE_DOCUMENTS_FOLDER', 'documents')
     
     @staticmethod
     def is_kindle_connected() -> bool:

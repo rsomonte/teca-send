@@ -3,16 +3,18 @@ import subprocess
 import logging
 from pathlib import Path
 import sys
+from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import config
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 class FileConverter:
     """Handle ebook file conversion using Calibre's ebook-convert"""
     
-    SUPPORTED_FORMATS = config.SUPPORTED_FORMATS
-    OUTPUT_FORMAT = config.OUTPUT_FORMAT
+    SUPPORTED_FORMATS = os.getenv('SUPPORTED_FORMATS', 'epub,mobi,azw3').split(',')
+    OUTPUT_FORMAT = os.getenv('OUTPUT_FORMAT', 'mobi')
     
     @staticmethod
     def is_supported(file_path: str) -> bool:

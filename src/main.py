@@ -7,14 +7,20 @@ import asyncio
 import logging
 import sys
 import os
+from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import config
+
+load_dotenv()
+
 from src.telegram_bot import TelegramBotHandler
+
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 
 # Setup logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=config.LOG_LEVEL
+    level=LOG_LEVEL
 )
 logger = logging.getLogger(__name__)
 
@@ -24,7 +30,7 @@ async def main():
         logger.info("Starting TECA-Send service...")
         
         # Validate configuration
-        if not config.TELEGRAM_BOT_TOKEN:
+        if not TELEGRAM_BOT_TOKEN:
             logger.error("TELEGRAM_BOT_TOKEN is not set. Please set it in .env file.")
             sys.exit(1)
         
