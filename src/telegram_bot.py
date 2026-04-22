@@ -22,37 +22,37 @@ class TelegramBotHandler:
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /start command"""
         await update.message.reply_text(
-            "Welcome to TECA-Send! 🎉\n\n"
-            "Send me an ebook file (EPUB, MOBI, or AZW3) and I'll convert it to Kindle format.\n"
-            "If a Kindle device is connected, I'll transfer it automatically.\n\n"
-            "Supported formats: EPUB, MOBI, AZW3"
+            "Bienvenido a TECA-Send! 🎉\n\n"
+            "Envíame un archivo de ebook (EPUB, MOBI o AZW3) y lo convertiré al formato de Kindle.\n"
+            "Si un dispositivo Kindle está conectado al servidor, lo transferiré automáticamente.\n\n"
+            "Formatos soportados: EPUB, MOBI, AZW3"
         )
     
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /help command"""
         await update.message.reply_text(
             "Commands:\n"
-            "/start - Welcome message\n"
-            "/help - This help message\n"
-            "/status - Check Kindle connection status\n\n"
-            "Simply send me an ebook file to get started!"
+            "/start - Mensaje de bienvenida\n"
+            "/help - Este mensaje de ayuda\n"
+            "/status - Verificar estado de conexión de Kindle\n\n"
+            "Simplemente envíame un archivo de ebook para comenzar!"
         )
     
     async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Check Kindle connection status"""
         if KindleTransfer.is_kindle_connected() and KindleTransfer.is_kindle_writable():
             await update.message.reply_text(
-                "✅ Kindle device is connected and ready!"
+                "✅ Dispositivo Kindle conectado y listo para transferencias!"
             )
         elif KindleTransfer.is_kindle_connected():
             await update.message.reply_text(
-                "⚠️ Kindle device is connected, but the documents folder is read-only.\n"
-                "Conversion will work, but automatic transfer is unavailable until write access is enabled."
+                "⚠️ Dispositivo Kindle conectado, pero la carpeta de documentos es de solo lectura.\n"
+                "La conversión funcionará, pero la transferencia automática no estará disponible hasta que se habilite el acceso de escritura."
             )
         else:
             await update.message.reply_text(
-                "⚠️ Kindle device is not connected.\n"
-                "Files will still be converted, but won't be transferred until a device is connected."
+                "⚠️ Dispositivo Kindle no está conectado.\n"
+                "Los archivos seguirán siendo convertidos, pero no se transferirán hasta que se conecte un dispositivo."
             )
     
     async def handle_document(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -65,15 +65,15 @@ class TelegramBotHandler:
             file_name = document.file_name
             if not FileConverter.is_supported(file_name):
                 await update.message.reply_text(
-                    f"❌ Unsupported file format: {Path(file_name).suffix}\n"
-                    f"Supported formats: {', '.join(FileConverter.SUPPORTED_FORMATS)}"
+                    f"❌ Formato de archivo no soportado: {Path(file_name).suffix}\n"
+                    f"Formatos soportados: {', '.join(FileConverter.SUPPORTED_FORMATS)}"
                 )
                 return
             
             # Download file
             await update.message.reply_text(
-                f"📥 Received file: {file_name}\n"
-                "🔄 Starting conversion..."
+                f"📥 Archivo recibido: {file_name}\n"
+                "🔄 Iniciando conversión..."
             )
             
             file = await context.bot.get_file(document.file_id)
@@ -83,8 +83,8 @@ class TelegramBotHandler:
             if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
                 logger.error(f"Downloaded file is missing or empty: {input_path}")
                 await update.message.reply_text(
-                    "❌ The uploaded file appears to be empty after download. "
-                    "Please resend the file and try again."
+                    "❌ El archivo subido parece estar vacío después de la descarga. "
+                    "Por favor, reenvía el archivo y vuelve a intentarlo."
                 )
                 return
             
@@ -96,46 +96,46 @@ class TelegramBotHandler:
             
             if not conversion_success:
                 await update.message.reply_text(
-                    "❌ File conversion failed. Please try again or contact support."
+                    "❌ La conversión del archivo falló. Por favor, intenta de nuevo o contacta con soporte."
                 )
                 return
 
             if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
                 logger.error(f"Converted output is missing or empty: {output_path}")
                 await update.message.reply_text(
-                    "❌ Conversion produced an empty file. "
-                    "Please try another source file."
+                    "❌ La conversión produjo un archivo vacío. "
+                    "Por favor, intenta con otro archivo fuente."
                 )
                 return
             
             # Conversion successful
             await update.message.reply_text(
-                f"✅ Conversion completed!\n"
-                f"Output: {output_filename}"
+                f"✅ Conversión completada!\n"
+                f"Salida: {output_filename}"
             )
             
             # Transfer to Kindle if connected
             if KindleTransfer.is_kindle_connected():
                 await update.message.reply_text(
-                    "📱 Transferring to Kindle device..."
+                    "📱 Transfiriendo al dispositivo Kindle..."
                 )
                 
                 transfer_success = KindleTransfer.transfer_file(output_path)
                 
                 if transfer_success:
                     await update.message.reply_text(
-                        f"✅ File successfully transferred to Kindle!\n"
-                        f"You can now safely disconnect your device."
+                        f"✅ Archivo transferido exitosamente al Kindle!\n"
+                        f"Ahora puedes desconectar tu dispositivo de forma segura."
                     )
                 else:
                     await update.message.reply_text(
-                        f"⚠️ Conversion completed, but transfer to Kindle failed (device may be read-only).\n"
-                        f"File is ready at: {output_path}"
+                        f"⚠️ Conversión completada, pero la transferencia al Kindle falló (el dispositivo puede estar en modo de solo lectura).\n"
+                        f"El archivo está listo en: {output_path}"
                     )
             else:
                 await update.message.reply_text(
-                    f"⚠️ Kindle device not connected.\n"
-                    f"Your converted file is ready and waiting."
+                    f"⚠️ Dispositivo Kindle no conectado.\n"
+                    f"Tu archivo convertido está listo y esperando."
                 )
             
             # Cleanup
@@ -147,7 +147,7 @@ class TelegramBotHandler:
         except Exception as e:
             logger.error(f"Error handling document: {str(e)}")
             await update.message.reply_text(
-                "❌ An error occurred while processing your file. Please try again."
+                "❌ Ocurrió un error mientras se procesaba tu archivo. Por favor, inténtalo de nuevo."
             )
     
     def setup_handlers(self):
