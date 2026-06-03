@@ -27,7 +27,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.SERVER_USER }} 
           SERVER_SSH_PORT: ${{ secrets.SSH_PORT }}
           # Path on your server where the project's docker-compose.yml is located
-          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || format('/home/{0}/teca-send', secrets.SERVER_USER) }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || format('/home/{0}/teca-send', secrets.DEPLOY_USER) }}
 
         run: |
           # Resolve the DNS name to an IP address
