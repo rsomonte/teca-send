@@ -1,0 +1,58 @@
+name: Fetch latest image on server
+
+on:
+  workflow_run:
+    workflows:
+      - "Build and Publish Docker Image"
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy via SSH and Docker Compose
+        env:
+          DEPLOY_HOST: ${{ secrets.SERVER_DNS_NAME }}
+          DEPLOY_USER: ${{ secrets.SERVER_USER }} 
+          SERVER_SSH_PORT: ${{ secrets.SSH_PORT }}
+          # Path on your server where the project's docker-compose.yml is located
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || format('/home/{0}/teca-send', secrets.SERVER_USER) }}
+
+        run: |
+          # Resolve the DNS name to an IP address
+          DEPLOY_HOST_IP=$(dig +short ${{ env.DEPLOY_HOST }} | tail -n1)
+          
+          if [ -z "$DEPLOY_HOST_IP" ]; then
+            echo "Error: Could not resolve IP for DNS"
+            exit 1
+          fi
+
+          # Mask the IP address in logs
+          echo "::add-mask::$DEPLOY_HOST_IP"
+
+          echo "Resolved DNS IP"
+          echo "Starting deployment to Server..."
+          
+          ssh -q -o StrictHostKeyChecking=no -p ${{ env.SERVER_SSH_PORT }} ${{ env.DEPLOY_USER }}@$DEPLOY_HOST_IP << EOF
+          cd ${{ env.DEPLOY_DIR }} || exit 1
+          
+          echo "Running: docker compose pull"
+          docker compose pull
+          
+          echo "Running: docker compose up -d"
+          docker compose up -d
+          
+          echo "Deployment complete."
+          exit
+          EOF

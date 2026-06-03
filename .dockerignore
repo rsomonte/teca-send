@@ -1,0 +1,25 @@
+# Git and GitHub
+.git
+.github
+
+# Environment and Secrets
+.env
+.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+env/
+venv/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation and Project Metadata
+README.md
+tests/

@@ -1,5 +1,6 @@
 services:
   teca-send:
+    image: ${DOCKER_IMAGE:-teca-send:latest}
     build:
       context: .
       dockerfile: Dockerfile
