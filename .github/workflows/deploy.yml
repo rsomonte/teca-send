@@ -27,11 +27,15 @@ jobs:
           DEPLOY_USER: ${{ secrets.SERVER_USER }} 
           SERVER_SSH_PORT: ${{ secrets.SSH_PORT }}
           # Path on your server where the project's docker-compose.yml is located
-          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || format('/home/{0}/teca-send', secrets.DEPLOY_USER) }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || format('/home/{0}/teca-send', secrets.SERVER_USER) }}
 
         run: |
           # Resolve the DNS name to an IP address
-          DEPLOY_HOST_IP=$(dig +short ${{ env.DEPLOY_HOST }} | tail -n1)
+          DEPLOY_HOST_IP=$(dig +short A "${{ env.DEPLOY_HOST }}" | head -n1)
+
+          if [ -z "$DEPLOY_HOST_IP" ]; then
+            DEPLOY_HOST_IP=$(dig +short "${{ env.DEPLOY_HOST }}" | head -n1)
+          fi
           
           if [ -z "$DEPLOY_HOST_IP" ]; then
             echo "Error: Could not resolve IP for DNS"
