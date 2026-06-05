@@ -11,7 +11,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -21,42 +21,73 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy via SSH and Docker Compose
+      - name: Debug SSH setup
+        run: |
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID"
+
+          echo "Loaded keys:"
+          ssh-add -l || true
+
+      - name: Resolve server IP
+        id: resolve
         env:
           DEPLOY_HOST: ${{ secrets.SERVER_DNS_NAME }}
-          DEPLOY_USER: ${{ secrets.SERVER_USER }} 
-          SERVER_SSH_PORT: ${{ secrets.SSH_PORT }}
-          # Path on your server where the project's docker-compose.yml is located
-          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || format('/home/{0}/teca-send', secrets.SERVER_USER) }}
-
         run: |
-          # Resolve the DNS name to an IP address
-          DEPLOY_HOST_IP=$(dig +short A "${{ env.DEPLOY_HOST }}" | head -n1)
+          DEPLOY_HOST_IP=$(dig +short A "$DEPLOY_HOST" | head -n1)
 
           if [ -z "$DEPLOY_HOST_IP" ]; then
-            DEPLOY_HOST_IP=$(dig +short "${{ env.DEPLOY_HOST }}" | head -n1)
+            DEPLOY_HOST_IP=$(dig +short "$DEPLOY_HOST" | head -n1)
           fi
-          
+
           if [ -z "$DEPLOY_HOST_IP" ]; then
-            echo "Error: Could not resolve IP for DNS"
+            echo "Could not resolve DNS"
             exit 1
           fi
 
-          # Mask the IP address in logs
           echo "::add-mask::$DEPLOY_HOST_IP"
+          echo "ip=$DEPLOY_HOST_IP" >> "$GITHUB_OUTPUT"
 
-          echo "Resolved DNS IP"
-          echo "Starting deployment to Server..."
-          
-          ssh -q -o StrictHostKeyChecking=no -p ${{ env.SERVER_SSH_PORT }} ${{ env.DEPLOY_USER }}@$DEPLOY_HOST_IP << EOF
-          cd ${{ env.DEPLOY_DIR }} || exit 1
-          
-          echo "Running: docker compose pull"
+          echo "DNS resolved successfully"
+
+      - name: Test SSH connection
+        env:
+          DEPLOY_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          ssh \
+            -vvv \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -p "$SERVER_SSH_PORT" \
+            "$DEPLOY_USER@${{ steps.resolve.outputs.ip }}" \
+            "echo 'SSH connection successful'; hostname; whoami"
+
+      - name: Deploy via SSH and Docker Compose
+        env:
+          DEPLOY_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || format('/home/{0}/teca-send', secrets.SERVER_USER) }}
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -p "$SERVER_SSH_PORT" \
+            "$DEPLOY_USER@${{ steps.resolve.outputs.ip }}" << EOF
+
+          set -euxo pipefail
+
+          cd "$DEPLOY_DIR"
+
+          pwd
+          ls -la
+
+          echo "Running docker compose pull"
           docker compose pull
-          
-          echo "Running: docker compose up -d"
+
+          echo "Running docker compose up -d"
           docker compose up -d
-          
-          echo "Deployment complete."
-          exit
+
+          echo "Deployment complete"
+
           EOF
